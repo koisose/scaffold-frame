@@ -37,7 +37,9 @@ const Home: NextPage = () => {
               try {
                 const text = await generateRoastOrPraise(user as string, "roast");
                 setGenerated(text.choices[0].message.content);
-              } catch {
+              } catch (e) {
+                //@ts-ignore
+
                 notification.error("Sorry there is error on our end please roast again");
               }
               setLoading(false);
@@ -46,7 +48,23 @@ const Home: NextPage = () => {
           >
             {loading ? "loading..." : "Roast"}
           </button>
-          <button disabled={loading} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+          <button
+            onClick={async () => {
+              setLoading(true);
+              setGenerated("");
+              try {
+                const text = await generateRoastOrPraise(user as string, "praise");
+                setGenerated(text.choices[0].message.content);
+              } catch (e) {
+                //@ts-ignore
+
+                notification.error("Sorry there is error on our end please praise again");
+              }
+              setLoading(false);
+            }}
+            disabled={loading}
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          >
             {loading ? "loading..." : "Praise"}
           </button>
         </div>
@@ -55,7 +73,7 @@ const Home: NextPage = () => {
         <>
           <div className="mt-8 w-[10em]] mx-10 bg-white rounded-lg shadow-md">
             <div className="flex items-center justify-center text-center ">
-              <p className="text-black">This is some centered text.</p>
+              <p className="text-black">{generated}</p>
             </div>
           </div>
           <div className="flex justify-center my-5">

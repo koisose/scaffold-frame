@@ -2,7 +2,7 @@ import type { ChatCompletion, Result } from "./type";
 import Groq from "groq-sdk";
 import ky from "ky";
 
-async function groqFallback(username: string, roastOrPraise: "roast" | "praise", detail: any) {
+export async function groqFallback(username: string, roastOrPraise: "roast" | "praise", detail: any) {
   const API_KEY = process.env.GROQ_API_KEY;
   const groq = new Groq({
     apiKey: API_KEY,
@@ -59,7 +59,7 @@ export async function getUserBulk(fids: string): Promise<any> {
   return response.json();
 }
 
-async function randomNode() {
+export async function randomNode() {
   const response = await ky.get("https://api.gaianet.ai/api/v1/network/nodes/");
   const data = await response.json();
 
@@ -69,13 +69,13 @@ async function randomNode() {
   const random = objectArray[Math.floor(Math.random() * objectArray.length)];
   return random;
 }
-async function getAllCast(fid: any) {
+export async function getAllCast(fid: any) {
   const response = await ky.get(`https://client.warpcast.com/v2/profile-casts?fid=${fid}&limit=5`);
   return response.json();
   // Process the response here
 }
-export async function checkUsername(username: string): Promise<any> {
-  const response = await fetch("https://localhost:3000/api/checkusername", {
+async function checkUsername(username: string): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/checkusername`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -89,16 +89,45 @@ export async function checkUsername(username: string): Promise<any> {
 
   return await response.json();
 }
+export async function fallbackGroq(username: string, roast: any, detail: any): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/groqfallback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, roast, detail }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error checking username: ${response.status}`);
+  }
+
+  return await response.json();
+}
+async function getAllNodes(): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/getallnodes`);
+  if (!response.ok) {
+    throw new Error(`Error fetching nodes: ${response.status}`);
+  }
+  return await response.json();
+}
+async function getAllCasts(fid: any): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/getallcast/${fid}`);
+  if (!response.ok) {
+    throw new Error(`Error fetching nodes: ${response.status}`);
+  }
+  return await response.json();
+}
 
 export async function generateRoastOrPraise(
   username: string,
   roastOrPraise: "roast" | "praise",
 ): Promise<ChatCompletion> {
-  const user = await getUserByUserName(username);
+  const user = await checkUsername(username);
   const { fid, activeStatus, displayName, followerCount, followingCount, powerBadge, profile } = user.result.user;
   const last5Post = [] as any;
   try {
-    const last5 = await getAllCast(fid);
+    const last5 = await getAllCasts(fid);
     //@ts-ignore
     populars = last5.result.casts.map(a => ({ text: a.text }));
   } catch {
@@ -115,7 +144,7 @@ export async function generateRoastOrPraise(
     last5Post,
   });
   try {
-    const random = await randomNode();
+    const random = await getAllNodes();
     const response = await ky.post(`https://${random.subdomain}/v1/chat/completions`, {
       json: {
         messages: [
@@ -144,8 +173,8 @@ export async function generateRoastOrPraise(
       timeout: 50000,
     });
     return response.json<ChatCompletion>();
-  } catch {
-    const response = await groqFallback(username, roastOrPraise, detail);
+  } catch (e) {
+    const response = await fallbackGroq(username, roastOrPraise, detail);
     return response as any;
   }
 }

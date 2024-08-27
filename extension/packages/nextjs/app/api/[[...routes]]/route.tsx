@@ -1,10 +1,10 @@
 /** @jsxImportSource frog/jsx */
-import { Button, Frog, TextInput } from "frog";
+import { Button, Frog } from "frog";
 import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { Box, Heading, Text, VStack, vars } from "~~/frog-ui/ui";
-import { getUserByUserName } from "~~/lib/gaianet";
+import { getAllCast, getUserByUserName, groqFallback, randomNode } from "~~/lib/gaianet";
 import { getDataById } from "~~/lib/mongo";
 import { parseString } from "~~/lib/parseString";
 
@@ -30,7 +30,7 @@ const app = new Frog({
 // Uncomment to use Edge Runtime
 // export const runtime = 'edge'
 app.composerAction(
-  "/panda",
+  "/roaster",
   async c => {
     const data = c.actionData;
     //@ts-ignore
@@ -38,9 +38,9 @@ app.composerAction(
     return c.res({
       title: "Roast or praise farcaster user",
       //@ts-ignore
-      url: `${process.env.URL}/composer-forms?originalText=${JSON.parse(decodeURIComponent(data.state)).cast.text}${
-        parsedData.mentionsUsername.length > 0 ? "&username=" + parsedData.mentionsUsername[0] : ""
-      }`,
+      url: `${process.env.NEXT_PUBLIC_URL}/composer-forms?originalText=${
+        JSON.parse(decodeURIComponent(data.state as any)).cast.text as any
+      }${parsedData.mentionsUsername.length > 0 ? "&username=" + parsedData.mentionsUsername[0] : ""}`,
     });
   },
   {
@@ -55,26 +55,19 @@ app.composerAction(
 app.frame("/", c => {
   return c.res({
     image: (
-      <Box grow alignVertical="center" backgroundColor="blue" padding="3">
-        <VStack gap="4">
-          <Heading>Roast or Praise Farcaster User</Heading>
-          <Text color="text200" size="20">
-            powered by gaianet
-          </Text>
-        </VStack>
+      <Box fontSize="16" textAlign="center" backgroundColor="blue">
+        Hello world
       </Box>
     ),
     intents: [
-      (<TextInput placeholder="Enter farcaster username" />) as any,
       (
-        <Button action="/whats" value="roast">
-          Roast
-        </Button>
-      ) as any,
-      (
-        <Button action="/whats" value="praise">
-          Praise
-        </Button>
+        <Button.Redirect
+          location={`https://warpcast.com/~/developers/composer-actions?postUrl=${encodeURIComponent(
+            (process.env.NEXT_PUBLIC_URL as string) + "/api/roaster",
+          )}`}
+        >
+          try now
+        </Button.Redirect>
       ) as any,
     ],
   });
@@ -148,10 +141,24 @@ app.hono.get("/get/:id", async c => {
   const data = await getDataById("roastorpraise", id);
   return c.json(data);
 });
+app.hono.get("/getallnodes", async c => {
+  const data = await randomNode();
+  return c.json(data);
+});
+app.hono.get("/getallcast/:fid", async c => {
+  const fid = c.req.param("fid");
+  const data = await getAllCast(fid);
+  return c.json(data as any);
+});
 app.hono.post("/checkusername", async c => {
-  const data = await c.req.json<any>();
+  const data = await c.req.parseBody({ all: true });
   const getUsername = await getUserByUserName(data.username as string);
   return c.json(getUsername);
+});
+app.hono.post("/groqfallback", async c => {
+  const data = await c.req.parseBody({ all: true });
+  const fallback = await groqFallback(data.username as string, data.roast as any, data.detail);
+  return c.json(fallback);
 });
 devtools(app, { serveStatic });
 
