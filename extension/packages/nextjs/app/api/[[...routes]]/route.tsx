@@ -6,9 +6,19 @@ import { serveStatic } from "frog/serve-static";
 import { Box, Heading, Text, VStack, vars } from "~~/frog-ui/ui";
 import { getUserByUserName } from "~~/lib/gaianet";
 import { getDataById } from "~~/lib/mongo";
+import { parseString } from "~~/lib/parseString";
 
 const app = new Frog({
   // imageAspectRatio: '1:1',
+  hub: {
+    apiUrl: "https://hubs.airstack.xyz",
+    fetchOptions: {
+      //@ts-ignore
+      headers: {
+        "x-airstack-hubs": process.env.AIRSTACK_API_KEY,
+      },
+    },
+  },
   ui: { vars },
   assetsPath: "/",
   basePath: "/api",
@@ -21,17 +31,23 @@ const app = new Frog({
 // export const runtime = 'edge'
 app.composerAction(
   "/panda",
-  c => {
+  async c => {
+    const data = c.actionData;
+    //@ts-ignore
+    const parsedData = await parseString(JSON.parse(decodeURIComponent(data.state)).cast.text);
     return c.res({
-      title: "My Composer Action",
-      url: `${process.env.URL}/composer-forms`,
+      title: "Roast or praise farcaster user",
+      //@ts-ignore
+      url: `${process.env.URL}/composer-forms?originalText=${JSON.parse(decodeURIComponent(data.state)).cast.text}${
+        parsedData.mentionsUsername.length > 0 ? "&username=" + parsedData.mentionsUsername[0] : ""
+      }`,
     });
   },
   {
     /* Name of the action – 14 characters max. */
-    name: "Roa",
+    name: "Roast or praise",
     /* Description of the action – 20 characters max. */
-    description: "Cool Composer Action",
+    description: "Roasting or praising farcaster user",
     icon: "image",
     imageUrl: "https://frog.fm/logo-light.svg",
   },

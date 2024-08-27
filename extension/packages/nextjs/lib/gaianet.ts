@@ -1,4 +1,4 @@
-import type { CastsResponse, ChatCompletion, Result } from "./type";
+import type { ChatCompletion, Result } from "./type";
 import Groq from "groq-sdk";
 import ky from "ky";
 
@@ -25,16 +25,6 @@ async function groqFallback(username: string, roastOrPraise: "roast" | "praise",
   });
   // const text = completion.choices[0]?.message?.content;
   return completion;
-}
-async function getPopularFeed(fid: number): Promise<CastsResponse> {
-  const response = await ky.get("https://api.neynar.com/v2/farcaster/feed/user/popular?fid=" + fid, {
-    headers: {
-      accept: "application/json",
-      api_key: process.env.NEYNAR,
-    },
-  });
-
-  return response.json<CastsResponse>();
 }
 
 export async function getUserByUserName(username: string): Promise<Result> {
@@ -79,18 +69,22 @@ async function randomNode() {
   const random = objectArray[Math.floor(Math.random() * objectArray.length)];
   return random;
 }
-
+async function getAllCast(fid: any) {
+  const response = await ky.get(`https://client.warpcast.com/v2/profile-casts?fid=${fid}&limit=5`);
+  return response.json();
+  // Process the response here
+}
 export async function generateRoastOrPraise(
   username: string,
   roastOrPraise: "roast" | "praise",
 ): Promise<ChatCompletion> {
   const user = await getUserByUserName(username);
   const { fid, activeStatus, displayName, followerCount, followingCount, powerBadge, profile } = user.result.user;
-  let populars = [] as any;
+  const last5Post = [] as any;
   try {
-    const popularFeed = await getPopularFeed(fid);
+    const last5 = await getAllCast(fid);
     //@ts-ignore
-    populars = popularFeed.casts.map(a => ({ text: a.text }));
+    populars = last5.result.casts.map(a => ({ text: a.text }));
   } catch {
     console.log("no populars");
   }
@@ -102,7 +96,7 @@ export async function generateRoastOrPraise(
     followingCount,
     powerBadge,
     profile,
-    popularPost: populars,
+    last5Post,
   });
   try {
     const random = await randomNode();
@@ -113,8 +107,8 @@ export async function generateRoastOrPraise(
             role: "system",
             content:
               roastOrPraise === "roast"
-                ? "you're a roast master"
-                : "You are a helpful, respectful, and honest assistant.",
+                ? "you're a roast master for a social media website called farcaster"
+                : "You are a helpful, respectful, and honest praiser for a social media website called farcaster",
           },
           {
             role: "user",
