@@ -1,0 +1,11 @@
+
+/* Hides the Header */
+div:has(+ main) {
+    display: none !important;
+  }
+  
+  /* Hides the Footer */
+  main + div {
+    display: none;
+  }
+  

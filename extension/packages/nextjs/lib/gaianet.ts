@@ -1,0 +1,141 @@
+import type { CastsResponse, ChatCompletion, Result } from "./type";
+import Groq from "groq-sdk";
+import ky from "ky";
+
+async function groqFallback(username: string, roastOrPraise: "roast" | "praise", detail: any) {
+  const API_KEY = process.env.GROQ_API_KEY;
+  const groq = new Groq({
+    apiKey: API_KEY,
+  });
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: "system",
+        content:
+          roastOrPraise === "roast" ? "you're a roast master" : "You are a helpful, respectful, and honest praiser.",
+      },
+      {
+        role: "user",
+        content: `give a short and ${
+          roastOrPraise === "roast" ? "harsh roasting" : "glowing praise"
+        } for the following social media user: "${username}". Here are the details: ${detail}`,
+      },
+    ],
+    model: "gemma-7b-it",
+  });
+  // const text = completion.choices[0]?.message?.content;
+  return completion;
+}
+async function getPopularFeed(fid: number): Promise<CastsResponse> {
+  const response = await ky.get("https://api.neynar.com/v2/farcaster/feed/user/popular?fid=" + fid, {
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR,
+    },
+  });
+
+  return response.json<CastsResponse>();
+}
+
+export async function getUserByUserName(username: string): Promise<Result> {
+  const response = await ky.get(`https://api.neynar.com/v1/farcaster/user-by-username?username=${username}`, {
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR,
+    },
+  });
+
+  return response.json<Result>();
+}
+
+export async function getCastByHash(hash: string): Promise<any> {
+  const response = await ky.get(`https://api.neynar.com/v2/farcaster/cast?identifier=${hash}&type=hash`, {
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR,
+    },
+  });
+
+  return response.json();
+}
+export async function getUserBulk(fids: string): Promise<any> {
+  const response = await ky.get(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${fids}`, {
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR,
+    },
+  });
+
+  return response.json();
+}
+
+async function randomNode() {
+  const response = await ky.get("https://api.gaianet.ai/api/v1/network/nodes/");
+  const data = await response.json();
+
+  const objectArray = (data as any).data.objects.filter(
+    (obj: any) => obj.status === "ONLINE" && obj.model_name && obj.model_name.toLowerCase().includes("llama"),
+  );
+  const random = objectArray[Math.floor(Math.random() * objectArray.length)];
+  return random;
+}
+
+export async function generateRoastOrPraise(
+  username: string,
+  roastOrPraise: "roast" | "praise",
+): Promise<ChatCompletion> {
+  const user = await getUserByUserName(username);
+  const { fid, activeStatus, displayName, followerCount, followingCount, powerBadge, profile } = user.result.user;
+  let populars = [] as any;
+  try {
+    const popularFeed = await getPopularFeed(fid);
+    //@ts-ignore
+    populars = popularFeed.casts.map(a => ({ text: a.text }));
+  } catch {
+    console.log("no populars");
+  }
+
+  const detail = JSON.stringify({
+    activeStatus,
+    displayName,
+    followerCount,
+    followingCount,
+    powerBadge,
+    profile,
+    popularPost: populars,
+  });
+  try {
+    const random = await randomNode();
+    const response = await ky.post(`https://${random.subdomain}/v1/chat/completions`, {
+      json: {
+        messages: [
+          {
+            role: "system",
+            content:
+              roastOrPraise === "roast"
+                ? "you're a roast master"
+                : "You are a helpful, respectful, and honest assistant.",
+          },
+          {
+            role: "user",
+            content: `give a short and ${
+              roastOrPraise === "roast" ? "harsh roasting" : "glowing praise"
+            } for the following social media user: "${username}". Here are the details: ${detail}`,
+          },
+        ],
+        model: random.model_name,
+      },
+      retry: {
+        limit: 3,
+        methods: ["post"],
+        statusCodes: [408, 504],
+        backoffLimit: 3000,
+      },
+      timeout: 50000,
+    });
+    return response.json<ChatCompletion>();
+  } catch {
+    const response = await groqFallback(username, roastOrPraise, detail);
+    return response as any;
+  }
+}
