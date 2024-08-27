@@ -148,6 +148,11 @@ app.hono.get("/get/:id", async c => {
   const data = await getDataById("roastorpraise", id);
   return c.json(data);
 });
+app.hono.post("/checkusername", async c => {
+  const data = await c.req.json<any>();
+  const getUsername = await getUserByUserName(data.username as string);
+  return c.json(getUsername);
+});
 devtools(app, { serveStatic });
 
 export const GET = handle(app);

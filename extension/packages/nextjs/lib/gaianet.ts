@@ -74,6 +74,22 @@ async function getAllCast(fid: any) {
   return response.json();
   // Process the response here
 }
+export async function checkUsername(username: string): Promise<any> {
+  const response = await fetch("https://localhost:3000/api/checkusername", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error checking username: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
 export async function generateRoastOrPraise(
   username: string,
   roastOrPraise: "roast" | "praise",

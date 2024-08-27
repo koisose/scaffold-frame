@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { NextPage } from "next";
+import { generateRoastOrPraise } from "~~/lib/gaianet";
 import "~~/styles/hide.css";
+import { notification } from "~~/utils/scaffold-eth";
 
-// import { generateRoastOrPraise } from "~~/lib/gaianet";
 const Home: NextPage = () => {
   const searchParams = useSearchParams();
-  const query = searchParams.get("username");
+  const username = searchParams.get("username");
   // const originalText = searchParams.get('originalText')
-  const [generated] = useState("");
+  const [generated, setGenerated] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [user, setUsername] = useState(username);
   return (
     <>
       <div className="flex flex-col items-center justify-center ">
@@ -18,10 +21,34 @@ const Home: NextPage = () => {
         <p className="mt-4 text-lg text-white">Input farcaster username</p>
       </div>
       <div className="flex flex-col items-center justify-center ">
-        <input type="text" value={query as any} className="border border-gray-400 px-4 py-2 rounded-md" />
+        <input
+          disabled={loading}
+          type="text"
+          value={user as any}
+          onChange={e => setUsername(e.target.value)}
+          className="border border-gray-400 px-4 py-2 rounded-md"
+        />
         <div className="mt-4 flex space-x-4">
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Roast</button>
-          <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Praise</button>
+          <button
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              setGenerated("");
+              try {
+                const text = await generateRoastOrPraise(user as string, "roast");
+                setGenerated(text.choices[0].message.content);
+              } catch {
+                notification.error("Sorry there is error on our end please roast again");
+              }
+              setLoading(false);
+            }}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            {loading ? "loading..." : "Roast"}
+          </button>
+          <button disabled={loading} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            {loading ? "loading..." : "Praise"}
+          </button>
         </div>
       </div>
       {generated.length > 0 && (
