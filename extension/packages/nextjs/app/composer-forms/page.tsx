@@ -1,20 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-// import { postComposerCreateCastActionMessage } from "frog/next";
+import { postComposerCreateCastActionMessage } from "frog/next";
 import type { NextPage } from "next";
-import {
-  generateRoastOrPraise,
-  getParseString,
-  getUserByFid, // , savedata
-} from "~~/lib/gaianet";
+import { generateRoastOrPraise, getParseString, getUserByFid, savedata } from "~~/lib/gaianet";
 import "~~/styles/hide.css";
 import { notification } from "~~/utils/scaffold-eth";
 
 const Home: NextPage = () => {
   const searchParams = useSearchParams();
+  const inputRef = useRef(null);
   const fid = searchParams.get("fid");
   const originalText = searchParams.get("originalText");
   const { data: creator, isLoading } = useQuery({
@@ -28,7 +25,9 @@ const Home: NextPage = () => {
   const [generated, setGenerated] = useState("");
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("");
-  const [user, setUsername] = useState("");
+  const [user, setUsername] = useState(
+    parsedString?.mentionsUsername.length > 0 ? parsedString.mentionsUsername[0] : "",
+  );
   if (isLoading || loadingParsed) return <div>Loading...</div>;
 
   return (
@@ -39,6 +38,7 @@ const Home: NextPage = () => {
       </div>
       <div className="flex flex-col items-center justify-center ">
         <input
+          ref={inputRef}
           disabled={loading}
           type="text"
           value={parsedString?.mentionsUsername.length > 0 ? parsedString.mentionsUsername[0] : "" || (user as any)}
@@ -53,7 +53,8 @@ const Home: NextPage = () => {
               setGenerated("");
               try {
                 setType("roast");
-                const text = await generateRoastOrPraise(user as string, "roast");
+                //@ts-ignore
+                const text = await generateRoastOrPraise(inputRef?.current?.value || (user as string), "roast");
                 setGenerated(text.choices[0].message.content);
               } catch (e) {
                 //@ts-ignore
@@ -72,7 +73,8 @@ const Home: NextPage = () => {
               setGenerated("");
               setType("praise");
               try {
-                const text = await generateRoastOrPraise(user as string, "praise");
+                //@ts-ignore
+                const text = await generateRoastOrPraise(inputRef?.current?.value || (user as string), "praise");
                 setGenerated(text.choices[0].message.content);
               } catch (e) {
                 setLoading(false);
@@ -98,20 +100,22 @@ const Home: NextPage = () => {
           <div className="flex justify-center my-5">
             <button
               onClick={async () => {
-                // setLoading(true);
-                // const url = process.env.NEXT_PUBLIC_URL;
-                console.log({ user, creator, type, generated });
-                // savedata(user, creator, type, generated).then(data=>{
-                //   postComposerCreateCastActionMessage({
-                //     text: originalText as string,
-                //     embeds: [`${url}/api/roastorpraise/${data.id}`],
-                //   });
-                //   setLoading(false);
-                // }).catch(e=>{
-                //   console.log(e.message)
-                //   setLoading(false);
-                // notification.error("sorry there is an error in our end please try again");
-                // });
+                setLoading(true);
+                const url = process.env.NEXT_PUBLIC_URL;
+
+                savedata(user, creator, type, generated)
+                  .then(data => {
+                    postComposerCreateCastActionMessage({
+                      text: originalText as string,
+                      embeds: [`${url}/api/roastorpraise/${data.id}`],
+                    });
+                    setLoading(false);
+                  })
+                  .catch(e => {
+                    console.log(e.message);
+                    setLoading(false);
+                    notification.error("sorry there is an error in our end please try again");
+                  });
               }}
               className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-24"
             >

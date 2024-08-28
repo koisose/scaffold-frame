@@ -64,7 +64,7 @@ app.frame("/roastorpraise/:id", async c => {
   // return c.json(data)
   return c.res({
     image: (
-      <Box fontSize="16" textAlign="center">
+      <Box fontSize="20" textAlign="center">
         {data.message}
       </Box>
     ),
@@ -101,14 +101,14 @@ app.hono.get("/getallcast/:fid", async c => {
   return c.json(data as any);
 });
 app.hono.post("/checkusername", async c => {
-  const data = await c.req.parseBody({ all: true });
+  const data = await c.req.json();
   const getUsername = await getUserByUsername(data.username as string);
   return c.json(getUsername);
 });
 app.hono.post("/generateroastorpraise", async c => {
-  const data = await c.req.parseBody({ all: true });
+  const data = await c.req.json();
+
   const getUsername = await generateRoastOrPraiseRequest(
-    data.random as any,
     data.roastOrPraise as any,
     data.username as any,
     data.detail as any,
@@ -116,12 +116,13 @@ app.hono.post("/generateroastorpraise", async c => {
   return c.json(getUsername);
 });
 app.hono.post("/groqfallback", async c => {
-  const data = await c.req.parseBody({ all: true });
+  const data = await c.req.json();
+
   const fallback = await groqFallback(data.username as string, data.roast as any, data.detail);
   return c.json(fallback);
 });
 app.hono.post("/savedata", async c => {
-  const data = await c.req.parseBody({ all: true });
+  const data = await c.req.json();
   const id = await saveData(
     { username: data.username, creator: data.creator, type: data.type, message: data.message },
     "roastorpraise",

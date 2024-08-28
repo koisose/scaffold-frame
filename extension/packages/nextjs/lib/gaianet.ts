@@ -110,13 +110,10 @@ export async function savedata(username: string, creator: any, type: any, messag
 
   return await response.json();
 }
-export async function postGenerate(random: any, roastOrPraise: any, username: any, detail: any): Promise<any> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/generateroastorpraise`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ random, roastOrPraise, username, detail }),
+async function postGenerate(roastOrPraise: any, username: any, detail: any): Promise<any> {
+  // console.log({ roastOrPraise, username, detail })
+  const response = await ky.post(`${process.env.NEXT_PUBLIC_URL}/api/generateroastorpraise`, {
+    json: { roastOrPraise, username, detail },
   });
 
   if (!response.ok) {
@@ -157,7 +154,8 @@ export async function getParseString(text: any): Promise<any> {
   }
   return await response.json();
 }
-export async function generateRoastOrPraiseRequest(random: any, roastOrPraise: any, username: any, detail: any) {
+export async function generateRoastOrPraiseRequest(roastOrPraise: any, username: any, detail: any) {
+  const random = await getAllNodes();
   const response = await ky.post(`https://${random.subdomain}/v1/chat/completions`, {
     json: {
       messages: [
@@ -193,13 +191,14 @@ export async function generateRoastOrPraise(
 ): Promise<ChatCompletion> {
   const user = await checkUsername(username);
   const { fid, activeStatus, displayName, followerCount, followingCount, powerBadge, profile } = user.result.user;
-  const last5Post = [] as any;
+  let last5Post = [] as any;
   try {
     const last5 = await getAllCasts(fid);
     //@ts-ignore
-    populars = last5.result.casts.map(a => ({ text: a.text }));
-  } catch {
-    console.log("no populars");
+    last5Post = last5.result.casts.map(a => ({ text: a.text }));
+  } catch (e) {
+    //@ts-ignore
+    console.log(e.message);
   }
 
   const detail = JSON.stringify({
@@ -212,10 +211,11 @@ export async function generateRoastOrPraise(
     last5Post,
   });
   try {
-    const random = await getAllNodes();
-    const response = await postGenerate(random, roastOrPraise, username, detail);
+    const response = await postGenerate(roastOrPraise, username, detail);
     return response.json();
-  } catch (e) {
+  } catch {
+    // console.log("error",e.message)
+    console.log(username, roastOrPraise, detail);
     const response = await fallbackGroq(username, roastOrPraise, detail);
     return response as any;
   }
