@@ -104,6 +104,21 @@ export async function fallbackGroq(username: string, roast: any, detail: any): P
 
   return await response.json();
 }
+export async function savedata(username: string, creator: any, type: any, message: any): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/savedata`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ username, creator, type, message }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error savedata`);
+  }
+
+  return await response.json();
+}
 async function getAllNodes(): Promise<any> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/getallnodes`);
   if (!response.ok) {
