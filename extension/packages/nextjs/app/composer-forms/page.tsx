@@ -106,7 +106,7 @@ const Home: NextPage = () => {
                 savedata(user, creator, type, generated)
                   .then(data => {
                     postComposerCreateCastActionMessage({
-                      text: originalText as string,
+                      text: `${originalText} ${url}/api/roastorpraise/${data.id}` as string,
                       embeds: [`${url}/api/roastorpraise/${data.id}`],
                     });
                     setLoading(false);

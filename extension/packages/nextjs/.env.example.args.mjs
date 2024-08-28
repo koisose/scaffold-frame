@@ -1,0 +1,5 @@
+export const additionalVars = `NEYNAR=
+MONGO=
+GROQ_API_KEY=
+NEXT_PUBLIC_URL=
+AIRSTACK_API_KEY=`;
