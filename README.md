@@ -76,6 +76,6 @@ Then in new terminal run cloudflared:
 cloudflared tunnel --url http://localhost:3000
 ```
 
-Copy paste the url you got to `NEXT_PUBLIC_URL` env variable then open https://warpcast.com/~/developers/composer-actions then input the url in `Post URL` type something then click `Test Action` button, if you successfully run this then you will see your composer action 
+Copy paste the url you got to `NEXT_PUBLIC_URL` env variable then open https://warpcast.com/~/developers/composer-actions then input the `<NEXT_PUBLIC_URL>/api/roaster` in `Post URL` type something then click `Test Action` button, if you successfully run this then you will see your composer action 
 
 # Youtube tutorial
