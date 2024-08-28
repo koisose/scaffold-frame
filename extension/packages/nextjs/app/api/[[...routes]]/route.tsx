@@ -4,7 +4,14 @@ import { devtools } from "frog/dev";
 import { handle } from "frog/next";
 import { serveStatic } from "frog/serve-static";
 import { Box, vars } from "~~/frog-ui/ui";
-import { getAllCast, getUserBulk, getUserByUserName, groqFallback, randomNode } from "~~/lib/gaianet";
+import {
+  generateRoastOrPraiseRequest,
+  getAllCast,
+  getUserBulk,
+  getUserByUsername,
+  groqFallback,
+  randomNode,
+} from "~~/lib/gaianet";
 import { getDataById, saveData } from "~~/lib/mongo";
 import { parseString } from "~~/lib/parseString";
 
@@ -52,7 +59,9 @@ app.composerAction(
 );
 app.frame("/roastorpraise/:id", async c => {
   const id = c.req.param("id");
+
   const data = await getDataById("roastorpraise", id);
+  // return c.json(data)
   return c.res({
     image: (
       <Box fontSize="16" textAlign="center">
@@ -93,7 +102,17 @@ app.hono.get("/getallcast/:fid", async c => {
 });
 app.hono.post("/checkusername", async c => {
   const data = await c.req.parseBody({ all: true });
-  const getUsername = await getUserByUserName(data.username as string);
+  const getUsername = await getUserByUsername(data.username as string);
+  return c.json(getUsername);
+});
+app.hono.post("/generateroastorpraise", async c => {
+  const data = await c.req.parseBody({ all: true });
+  const getUsername = await generateRoastOrPraiseRequest(
+    data.random as any,
+    data.roastOrPraise as any,
+    data.username as any,
+    data.detail as any,
+  );
   return c.json(getUsername);
 });
 app.hono.post("/groqfallback", async c => {

@@ -1,4 +1,6 @@
-import type { ChatCompletion, Result } from "./type";
+import type {
+  ChatCompletion, // , Result
+} from "./type";
 import Groq from "groq-sdk";
 import ky from "ky";
 
@@ -25,17 +27,6 @@ export async function groqFallback(username: string, roastOrPraise: "roast" | "p
   });
   // const text = completion.choices[0]?.message?.content;
   return completion;
-}
-
-export async function getUserByUserName(username: string): Promise<Result> {
-  const response = await ky.get(`https://api.neynar.com/v1/farcaster/user-by-username?username=${username}`, {
-    headers: {
-      accept: "application/json",
-      api_key: process.env.NEYNAR,
-    },
-  });
-
-  return response.json<Result>();
 }
 
 export async function getCastByHash(hash: string): Promise<any> {
@@ -119,6 +110,25 @@ export async function savedata(username: string, creator: any, type: any, messag
 
   return await response.json();
 }
+export async function postGenerate(random: any, roastOrPraise: any, username: any, detail: any): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/generateroastorpraise`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ random, roastOrPraise, username, detail }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error savedata`);
+  }
+
+  return await response.json();
+}
+export async function getUserByUsername(username: string): Promise<any> {
+  const response = await ky.get(`https://client.warpcast.com/v2/user-by-username?username=${username}`);
+  return response.json();
+}
 async function getAllNodes(): Promise<any> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/getallnodes`);
   if (!response.ok) {
@@ -147,7 +157,36 @@ export async function getParseString(text: any): Promise<any> {
   }
   return await response.json();
 }
-
+export async function generateRoastOrPraiseRequest(random: any, roastOrPraise: any, username: any, detail: any) {
+  const response = await ky.post(`https://${random.subdomain}/v1/chat/completions`, {
+    json: {
+      messages: [
+        {
+          role: "system",
+          content:
+            roastOrPraise === "roast"
+              ? "you're a roast master for a social media website called farcaster"
+              : "You are a helpful, respectful, and honest praiser for a social media website called farcaster",
+        },
+        {
+          role: "user",
+          content: `give a short and ${
+            roastOrPraise === "roast" ? "harsh roasting" : "glowing praise"
+          } for the following social media user: "${username}". Here are the details: ${detail}`,
+        },
+      ],
+      model: random.model_name,
+    },
+    retry: {
+      limit: 3,
+      methods: ["post"],
+      statusCodes: [408, 504],
+      backoffLimit: 3000,
+    },
+    timeout: 50000,
+  });
+  return response;
+}
 export async function generateRoastOrPraise(
   username: string,
   roastOrPraise: "roast" | "praise",
@@ -174,34 +213,8 @@ export async function generateRoastOrPraise(
   });
   try {
     const random = await getAllNodes();
-    const response = await ky.post(`https://${random.subdomain}/v1/chat/completions`, {
-      json: {
-        messages: [
-          {
-            role: "system",
-            content:
-              roastOrPraise === "roast"
-                ? "you're a roast master for a social media website called farcaster"
-                : "You are a helpful, respectful, and honest praiser for a social media website called farcaster",
-          },
-          {
-            role: "user",
-            content: `give a short and ${
-              roastOrPraise === "roast" ? "harsh roasting" : "glowing praise"
-            } for the following social media user: "${username}". Here are the details: ${detail}`,
-          },
-        ],
-        model: random.model_name,
-      },
-      retry: {
-        limit: 3,
-        methods: ["post"],
-        statusCodes: [408, 504],
-        backoffLimit: 3000,
-      },
-      timeout: 50000,
-    });
-    return response.json<ChatCompletion>();
+    const response = await postGenerate(random, roastOrPraise, username, detail);
+    return response.json();
   } catch (e) {
     const response = await fallbackGroq(username, roastOrPraise, detail);
     return response as any;

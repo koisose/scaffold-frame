@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { postComposerCreateCastActionMessage } from "frog/next";
+// import { postComposerCreateCastActionMessage } from "frog/next";
 import type { NextPage } from "next";
-import { generateRoastOrPraise, getParseString, getUserByFid, savedata } from "~~/lib/gaianet";
+import {
+  generateRoastOrPraise,
+  getParseString,
+  getUserByFid, // , savedata
+} from "~~/lib/gaianet";
 import "~~/styles/hide.css";
 import { notification } from "~~/utils/scaffold-eth";
 
@@ -94,19 +98,20 @@ const Home: NextPage = () => {
           <div className="flex justify-center my-5">
             <button
               onClick={async () => {
-                try {
-                  setLoading(true);
-                  const url = process.env.NEXT_PUBLIC_URL;
-                  const data = await savedata(user, creator, type, generated);
-                  setLoading(false);
-                  postComposerCreateCastActionMessage({
-                    text: originalText as string,
-                    embeds: [`${url}/api/roastorpraise/${data.id}`],
-                  });
-                } catch {
-                  setLoading(false);
-                  notification.error("sorry there is an error in our end please try again");
-                }
+                // setLoading(true);
+                // const url = process.env.NEXT_PUBLIC_URL;
+                console.log({ user, creator, type, generated });
+                // savedata(user, creator, type, generated).then(data=>{
+                //   postComposerCreateCastActionMessage({
+                //     text: originalText as string,
+                //     embeds: [`${url}/api/roastorpraise/${data.id}`],
+                //   });
+                //   setLoading(false);
+                // }).catch(e=>{
+                //   console.log(e.message)
+                //   setLoading(false);
+                // notification.error("sorry there is an error in our end please try again");
+                // });
               }}
               className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-24"
             >
