@@ -126,8 +126,22 @@ async function getAllNodes(): Promise<any> {
   }
   return await response.json();
 }
+export async function getUserByFid(fid: any): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/getuserfid/${fid}`);
+  if (!response.ok) {
+    throw new Error(`Error fetching nodes: ${response.status}`);
+  }
+  return await response.json();
+}
 async function getAllCasts(fid: any): Promise<any> {
   const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/getallcast/${fid}`);
+  if (!response.ok) {
+    throw new Error(`Error fetching nodes: ${response.status}`);
+  }
+  return await response.json();
+}
+export async function getParseString(text: any): Promise<any> {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/parsestring?text=${text}`);
   if (!response.ok) {
     throw new Error(`Error fetching nodes: ${response.status}`);
   }

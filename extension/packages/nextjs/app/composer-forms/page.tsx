@@ -2,25 +2,33 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { postComposerCreateCastActionMessage } from "frog/next";
 import type { NextPage } from "next";
-import {
-  generateRoastOrPraise, // ,savedata
-} from "~~/lib/gaianet";
+import { generateRoastOrPraise, getParseString, getUserByFid, savedata } from "~~/lib/gaianet";
 import "~~/styles/hide.css";
 import { notification } from "~~/utils/scaffold-eth";
 
 const Home: NextPage = () => {
   const searchParams = useSearchParams();
-  const username = searchParams.get("username");
+  const fid = searchParams.get("fid");
   const originalText = searchParams.get("originalText");
+  const { data: creator, isLoading } = useQuery({
+    queryKey: ["user", fid],
+    queryFn: () => getUserByFid(fid),
+  });
+  const { data: parsedString, isLoading: loadingParsed } = useQuery({
+    queryKey: ["parseString", originalText],
+    queryFn: () => getParseString(originalText),
+  });
   const [generated, setGenerated] = useState("");
   const [loading, setLoading] = useState(false);
-  const [user, setUsername] = useState(username || "");
   const [type, setType] = useState("");
+  const [user, setUsername] = useState("");
+  if (isLoading || loadingParsed) return <div>Loading...</div>;
+
   return (
     <>
-      {type}
       <div className="flex flex-col items-center justify-center ">
         <h1 className="text-4xl font-bold text-white">Roast or Praise Farcaster user</h1>
         <p className="mt-4 text-lg text-white">Input farcaster username</p>
@@ -29,7 +37,7 @@ const Home: NextPage = () => {
         <input
           disabled={loading}
           type="text"
-          value={user as any}
+          value={parsedString?.mentionsUsername.length > 0 ? parsedString.mentionsUsername[0] : "" || (user as any)}
           onChange={e => setUsername(e.target.value)}
           className="border border-gray-400 px-4 py-2 rounded-md"
         />
@@ -86,9 +94,19 @@ const Home: NextPage = () => {
           <div className="flex justify-center my-5">
             <button
               onClick={async () => {
-                // const url=process.env.NEXT_PUBLIC_URL;
-                // const data=await savedata(user);
-                postComposerCreateCastActionMessage({ text: originalText as string, embeds: [] });
+                try {
+                  setLoading(true);
+                  const url = process.env.NEXT_PUBLIC_URL;
+                  const data = await savedata(user, creator, type, generated);
+                  setLoading(false);
+                  postComposerCreateCastActionMessage({
+                    text: originalText as string,
+                    embeds: [`${url}/api/roastorpraise/${data.id}`],
+                  });
+                } catch {
+                  setLoading(false);
+                  notification.error("sorry there is an error in our end please try again");
+                }
               }}
               className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded w-24"
             >
