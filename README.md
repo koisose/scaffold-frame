@@ -52,8 +52,15 @@ NEXT_PUBLIC_URL=
 AIRSTACK_API_KEY=
 ```
 
-For `NEYNAR` environment variable you can get api key from https://neynar.com/ ,for `MONGO` you can create free database in https://www.mongodb.com/cloud/atlas/register, `GROQ_API_KEY` you can get in https://console.groq.com/keys, `NEXT_PUBLIC_URL` is your public url
-you can create one using https://github.com/cloudflare/cloudflared then for airstack you can get api key from https://airstack.xyz/
+For `NEYNAR` environment variable you can get api key from https://neynar.com/ 
+
+For `MONGO` you can create free database in https://www.mongodb.com/cloud/atlas/register
+
+For `GROQ_API_KEY` you can get in https://console.groq.com/keys
+
+For `NEXT_PUBLIC_URL` is your public url you can create one using https://github.com/cloudflare/cloudflared
+
+For `AIRSTACK_API_KEY` you can get api key from https://airstack.xyz/
 
 3. How to run
 
