@@ -16,6 +16,8 @@ They can be used to create rich in-feed experiences for web applications:
 
 *  Newsletters shared from [Paragraph](https://paragraph.xyz/) can be read inline and subscribed to in-feed
 
+About composer action https://warpcast.notion.site/Draft-Composer-Actions-7f2b8739ee8447cc8a6b518c234b1eeb
+
 ## Requirements
 
 Before you begin, you need to install the following tools:
