@@ -1,4 +1,4 @@
-# 🏗 Scaffold-ETH 2 and Farcaster Frame
+# 🏗 Scaffold-ETH 2 and Farcaster Composer Action extension
 
 Creating a farcaster composer action using scaffold-eth
 
